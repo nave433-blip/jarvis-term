@@ -12,7 +12,7 @@ Jarvis Term is a standalone, Warp-styled terminal emulator with deep Jarvis AI i
 ## Installation
 
 ### Method 1: Download Release
-*(Coming Soon)* Download the pre-packaged `.app` for Mac or `.AppImage` for Linux from the GitHub Releases tab.
+Download the pre-packaged `.app` for Mac or `.AppImage` for Linux from the [GitHub Releases](https://github.com/nave433-blip/jarvis-term/releases) tab.
 
 ### Method 2: Build from Source
 If you want to build the native desktop application yourself:

@@ -396,9 +396,33 @@
             termEl.className = 'terminal-instance';
             tabWrapper.appendChild(termEl);
 
+        COMMANDS = [
+            "/chat", "/fix", "/forge", "/decode", "/lookup", "/hardware", "/voice", "/watch", "/config", "/init", "/analyze", "/analyze-file",
+            "/locate", "/undo", "/dashboard", "/memory", "/personality", "/models", "/focus", 
+            "/cloud", "/network", "/ssh", "/server", "/troubleshoot", "/free", "/model", "/help", "/exit"
+        ]
+...
             const cmdBar = document.createElement('div');
             cmdBar.className = 'bottom-command-bar';
-            cmdBar.innerHTML = `<span class="prompt-symbol">JARVIS ></span><input type="text" class="warp-input" placeholder="Type a command or start chatting with JARVIS..." />`;
+            cmdBar.innerHTML = `
+                <div style="display: flex; flex-direction: column; width: 100%;">
+                    <div id="workspace-info-${id}" style="font-size: 10px; color: #666; margin-bottom: 5px; font-family: monospace;">📁 Loading...</div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="prompt-symbol">JARVIS ></span>
+                        <input type="text" class="warp-input" placeholder="Type a command or start chatting with JARVIS..." />
+                    </div>
+                </div>
+            `;
+...
+            // Update workspace info periodically
+            setInterval(() => {
+                const infoBox = document.getElementById(`workspace-info-${id}`);
+                if(infoBox) {
+                    pywebview.api.get_cwd().then(cwd => {
+                        infoBox.innerText = `📁 Workspace: ${cwd}`;
+                    });
+                }
+            }, 2000);
             const warpInput = cmdBar.querySelector('.warp-input');
             warpInput.addEventListener('keypress', (e) => {
                 if(e.key === 'Enter') {

@@ -135,6 +135,9 @@ class Api:
         webbrowser.open(url)
         return True
 
+    def get_cwd(self):
+        return os.getcwd()
+
     # Menu Callbacks
     def menu_new_session(self):
         self.window.evaluate_js("createTab()")
