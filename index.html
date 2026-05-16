@@ -189,7 +189,15 @@
             <button onclick="pinWorkspace()" class="icon-btn" title="Pin Workspace">📌</button>
         </div>
         <button id="add-tab-btn">+ Tab</button>
-        <button onclick="toggleSidePane()" id="toggle-pane-btn" class="icon-btn">📄</button>
+        
+        <div class="control-group" style="margin-left: 10px;">
+            <input type="text" id="search-input" placeholder="Search session..." style="width: 120px;" onkeypress="if(event.key==='Enter') searchTerm()">
+            <button onclick="searchTerm()" class="icon-btn">🔍</button>
+        </div>
+
+        <button onclick="openKeysModal()" class="icon-btn" title="Get API Keys" style="margin-left: 10px; color: #FFD700;">🔑 Keys</button>
+        
+        <button onclick="toggleSidePane()" id="toggle-pane-btn" class="icon-btn" style="margin-left: 10px;">📄</button>
         <button class="icon-btn" id="settings-btn" style="margin-left: auto;">⚙</button>
     </div>
     <div id="tab-bar"></div>
@@ -213,8 +221,23 @@
         <button style="width: 100%; margin-top: 20px;" onclick="closeSettings()">Close</button>
     </div>
 
+    <div id="keys-modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2D2D2D; padding: 20px; border-radius: 8px; border: 1px solid var(--border); z-index: 100; width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+        <h3>Get API Keys</h3>
+        <hr style="border: 0; border-top: 1px solid #444; margin-bottom: 15px;">
+        <ul style="list-style: none; padding: 0; font-size: 13px;">
+            <li style="margin-bottom: 10px;"><a href="#" onclick="pywebview.api.open_url('https://aistudio.google.com/app/apikey')" style="color: #4EC9B0; text-decoration: none;">💎 Google Gemini (Free Tier)</a></li>
+            <li style="margin-bottom: 10px;"><a href="#" onclick="pywebview.api.open_url('https://platform.openai.com/api-keys')" style="color: #4EC9B0; text-decoration: none;">🤖 OpenAI (GPT-4o)</a></li>
+            <li style="margin-bottom: 10px;"><a href="#" onclick="pywebview.api.open_url('https://console.anthropic.com/settings/keys')" style="color: #4EC9B0; text-decoration: none;">🎭 Anthropic (Claude)</a></li>
+            <li style="margin-bottom: 10px;"><a href="#" onclick="pywebview.api.open_url('https://console.x.ai/')" style="color: #4EC9B0; text-decoration: none;">🕶 xAI (Grok)</a></li>
+            <li style="margin-bottom: 10px;"><a href="#" onclick="pywebview.api.open_url('https://console.mistral.ai/api-keys/')" style="color: #4EC9B0; text-decoration: none;">🌬 Mistral AI</a></li>
+            <li style="margin-bottom: 10px;"><a href="#" onclick="pywebview.api.open_url('https://build.nvidia.com/')" style="color: #4EC9B0; text-decoration: none;">🎮 NVIDIA NIM</a></li>
+        </ul>
+        <button style="width: 100%; margin-top: 20px;" onclick="closeKeysModal()">Close</button>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-search@0.13.0/lib/xterm-addon-search.js"></script>
     <script>
         let tabs = [];
         let activeTabId = null;
@@ -303,7 +326,9 @@
                 cursorBlink: true
             });
             const fitAddon = new FitAddon.FitAddon();
+            const searchAddon = new SearchAddon.SearchAddon();
             term.loadAddon(fitAddon);
+            term.loadAddon(searchAddon);
             term.open(container);
             fitAddon.fit();
 
@@ -316,8 +341,26 @@
             
             pywebview.api.start_terminal(id, dir, env);
 
-            tabs.push({ id, term, fitAddon });
+            tabs.push({ id, term, fitAddon, searchAddon });
             switchTab(id);
+        }
+
+        function searchTerm() {
+            const query = document.getElementById('search-input').value;
+            const activeTab = tabs.find(t => t.id === activeTabId);
+            if(activeTab && query) {
+                activeTab.searchAddon.findNext(query);
+            }
+        }
+
+        function openKeysModal() {
+            document.getElementById('keys-modal').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function closeKeysModal() {
+            document.getElementById('keys-modal').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
         }
 
         function switchTab(id) {

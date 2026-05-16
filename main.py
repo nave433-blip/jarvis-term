@@ -7,6 +7,7 @@ import struct
 import select
 import threading
 import json
+import webbrowser
 from pathlib import Path
 
 class Api:
@@ -115,6 +116,10 @@ class Api:
             return []
         except Exception:
             return []
+
+    def open_url(self, url):
+        webbrowser.open(url)
+        return True
 
 if __name__ == '__main__':
     api = Api()
