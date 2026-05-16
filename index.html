@@ -3,335 +3,298 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jarvis</title>
+    <title>Jarvis Term | Engineering Console</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
     <style>
         :root {
-            --bg: #121212;
-            --top: #1E1E1E;
-            --accent: #4FC1FF;
-            --text: #E0E0E0;
-            --border: #2D2D2D;
-            --side: #1A1A1A;
-            --input-bg: #1E1E1E;
-            --focus-ring: 0 0 0 2px rgba(79, 193, 255, 0.5);
+            --bg: #0A0A0A;
+            --top: rgba(20, 20, 20, 0.8);
+            --accent: #00F0FF; /* Vibrant Cyan */
+            --accent-glow: rgba(0, 240, 255, 0.3);
+            --text: #F0F0F0;
+            --border: #333333;
+            --side: #111111;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
         body {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             background-color: var(--bg);
             color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+            font-family: "SF Pro Text", "Helvetica Neue", sans-serif;
             display: flex;
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #0a0a0a 100%);
         }
         #top-bar {
-            background-color: var(--top);
-            padding: 10px 20px;
+            background: var(--top);
+            backdrop-filter: blur(20px);
+            padding: 12px 25px;
             display: flex;
             align-items: center;
-            gap: 20px;
-            border-bottom: 1px solid var(--border);
-            z-index: 10;
+            gap: 25px;
+            border-bottom: 1px solid var(--glass-border);
+            z-index: 100;
         }
         #tab-bar {
-            background-color: var(--side);
+            background: rgba(10, 10, 10, 0.5);
             display: flex;
-            gap: 2px;
-            padding: 5px 10px 0 10px;
+            gap: 5px;
+            padding: 8px 15px 0 15px;
             border-bottom: 1px solid var(--border);
-            height: 40px;
+            height: 45px;
             align-items: flex-end;
         }
         .tab {
-            padding: 8px 20px;
-            background-color: #252526;
-            font-size: 12px;
+            padding: 10px 25px;
+            background: var(--glass);
+            font-size: 13px;
             cursor: pointer;
-            border-top-left-radius: 6px;
-            border-top-right-radius: 6px;
-            color: #888;
-            min-width: 120px;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            color: #777;
+            min-width: 140px;
             text-align: center;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
-            border: 1px solid var(--border);
+            gap: 15px;
+            border: 1px solid var(--glass-border);
             border-bottom: none;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .tab.active {
-            background-color: var(--bg);
+            background: rgba(0, 240, 255, 0.1);
             color: white;
             border-top: 2px solid var(--accent);
-            font-weight: 600;
+            box-shadow: inset 0 0 10px var(--accent-glow);
+            font-weight: 700;
         }
-        .tab:focus { outline: none; box-shadow: inset 0 3px 0 var(--accent); }
-        .tab .close-tab { font-size: 12px; color: #444; border-radius: 3px; }
-        .tab .close-tab:hover { color: #ff5555; background: #333; }
-
-        .control-group { display: flex; align-items: center; gap: 10px; }
-        label { font-size: 11px; text-transform: uppercase; color: #666; font-weight: 800; letter-spacing: 0.5px; }
+        .tab:hover { background: rgba(255,255,255,0.1); color: #AAA; }
+        
+        .control-group { display: flex; align-items: center; gap: 12px; }
         
         select, input {
-            background-color: #000;
+            background: #000;
             color: #FFF;
-            border: 1px solid #333;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 13px;
+            border: 1px solid #444;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 14px;
             outline: none;
-            transition: border 0.2s;
+            transition: all 0.3s;
         }
-        select:focus, input:focus { border-color: var(--accent); box-shadow: var(--focus-ring); }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
 
-        #main-view {
-            display: flex;
-            flex-grow: 1;
-            overflow: hidden;
-        }
-        #terminal-container {
-            flex-grow: 1;
-            background-color: var(--bg);
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
-        .terminal-instance-wrapper {
-            flex-grow: 1;
-            position: relative;
-            visibility: hidden;
-            display: none;
-        }
-        .terminal-instance-wrapper.active {
-            visibility: visible;
-            display: flex;
-            flex-direction: column;
-        }
-        .terminal-instance-wrapper.focused { box-shadow: inset 0 0 0 2px var(--accent); }
+        #main-view { display: flex; flex-grow: 1; overflow: hidden; }
+        #terminal-container { flex-grow: 1; position: relative; display: flex; flex-direction: column; background: #000; }
         
-        .terminal-instance { flex-grow: 1; padding: 15px; }
+        .terminal-instance-wrapper { flex-grow: 1; display: none; flex-direction: column; position: relative; }
+        .terminal-instance-wrapper.active { display: flex; }
+        .terminal-instance { flex-grow: 1; padding: 20px; }
         
+        /* GEMINI/WARP STYLE INPUT */
         .bottom-command-bar {
-            background-color: #0A0A0A;
-            padding: 15px 25px;
-            border-top: 1px solid var(--border);
+            background: rgba(15, 15, 15, 0.9);
+            backdrop-filter: blur(30px);
+            padding: 20px 40px;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .warp-input-container {
             display: flex;
             align-items: center;
             gap: 15px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+            padding: 5px 20px;
+            border-radius: 12px;
+            transition: border 0.3s;
         }
-        .prompt-symbol { color: var(--accent); font-weight: 900; font-family: 'Menlo', monospace; font-size: 16px; }
+        .warp-input-container:focus-within { border-color: var(--accent); }
+        .prompt-symbol { color: var(--accent); font-weight: 900; font-size: 18px; text-shadow: 0 0 10px var(--accent-glow); }
         .warp-input {
             flex-grow: 1;
-            background: #1A1A1A;
-            border: 1px solid #333;
+            background: transparent;
+            border: none !important;
             color: white;
-            font-family: 'JetBrains Mono', 'SF Mono', monospace;
-            font-size: 14px;
-            padding: 10px 15px;
-            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            padding: 12px 0;
+            box-shadow: none !important;
         }
 
         #side-pane {
-            width: 400px;
-            background-color: var(--side);
+            width: 450px;
+            background: rgba(10, 10, 10, 0.95);
             border-left: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            transition: width 0.3s;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(20px);
         }
-        #side-pane.collapsed { width: 0; display: none; }
+        #side-pane.collapsed { width: 0; opacity: 0; visibility: hidden; }
         #side-header {
-            padding: 15px;
-            background-color: #1E1E1E;
-            border-bottom: 1px solid var(--border);
-            font-size: 12px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            color: #888;
+            padding: 20px;
+            background: var(--glass);
+            border-bottom: 1px solid var(--glass-border);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--accent);
         }
         #doc-content {
-            padding: 25px;
+            padding: 30px;
             font-size: 14px;
             overflow-y: auto;
-            white-space: pre-wrap;
-            color: #BBB;
-            line-height: 1.7;
+            color: #DDD;
+            line-height: 1.8;
             font-family: 'JetBrains Mono', monospace;
         }
 
-        button {
-            background-color: var(--accent);
-            color: #000;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 700;
+        .icon-btn { 
+            background: var(--glass); 
+            font-size: 20px; color: #888; 
+            border: 1px solid var(--glass-border); 
+            padding: 10px; cursor: pointer; 
+            border-radius: 10px;
             transition: all 0.2s;
         }
-        button:hover { filter: brightness(1.1); transform: translateY(-1px); }
-        .icon-btn { background: none; font-size: 20px; color: #666; border: none; padding: 8px; cursor: pointer; border-radius: 6px; }
-        .icon-btn:hover { color: white; background: #2D2D2D; }
-        .logo { font-weight: 900; font-size: 18px; color: #4EC9B0; display: flex; align-items: center; gap: 12px; letter-spacing: 1px; }
-        .logo img { width: 24px; height: 22px; border-radius: 4px; }
+        .icon-btn:hover { color: var(--accent); border-color: var(--accent); background: rgba(0, 240, 255, 0.1); }
         
-        /* Modals */
+        .logo { font-weight: 900; font-size: 22px; color: white; display: flex; align-items: center; gap: 15px; }
+        .logo span { color: var(--accent); }
+        
+        /* Modals Glassmorphism */
         .modal {
             display: none;
             position: fixed;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            background: #181818;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            z-index: 100;
-            width: 700px;
-            height: 550px;
-            box-shadow: 0 40px 80px rgba(0,0,0,0.9);
-            display: flex;
-            flex-direction: column;
+            background: rgba(20, 20, 20, 0.9);
+            backdrop-filter: blur(40px);
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            z-index: 1000;
+            width: 800px; height: 600px;
+            box-shadow: 0 50px 100px rgba(0,0,0,0.8);
+            display: flex; flex-direction: column;
+            overflow: hidden;
         }
-        .modal-sidebar {
-            width: 200px;
-            background: #121212;
-            border-right: 1px solid var(--border);
-            padding: 40px 0;
-        }
-        .nav-item {
-            padding: 15px 30px;
-            font-size: 15px;
-            cursor: pointer;
-            color: #666;
-            transition: all 0.2s;
-        }
-        .nav-item.active {
-            background: #1A1A1A;
-            color: white;
-            border-left: 4px solid var(--accent);
-            font-weight: 700;
-        }
-        .modal-body { flex-grow: 1; padding: 45px; overflow-y: auto; }
-        .section { display: none; }
-        .section.active { display: block; }
+        .modal-sidebar { width: 220px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--glass-border); padding: 50px 0; }
+        .nav-item { padding: 18px 40px; font-size: 16px; cursor: pointer; color: #555; transition: 0.3s; }
+        .nav-item.active { color: var(--accent); border-right: 3px solid var(--accent); font-weight: 800; background: rgba(0,240,255,0.05); }
+        .modal-body { flex-grow: 1; padding: 60px; overflow-y: auto; }
+        
         .overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(10px);
-            z-index: 99;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(15px); z-index: 999;
         }
-        .row { margin-bottom: 25px; display: flex; flex-direction: column; gap: 10px; }
-        .row label { font-size: 12px; color: #555; text-transform: uppercase; font-weight: 900; letter-spacing: 1.5px; }
-        .row input, .row select { width: 100%; padding: 12px; background: #000; border: 1px solid #222; color: white; border-radius: 8px; font-size: 14px; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+        .loading-ring {
+            width: 20px; height: 20px;
+            border: 2px solid var(--glass-border);
+            border-top: 2px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body>
+<body ondragover="event.preventDefault()" ondrop="handleDrop(event)">
     <div id="top-bar">
         <div class="logo">
-            <img src="assets/icon.png" alt="J">
-            JARVIS
+            <span>J</span>ARVIS
         </div>
         <div class="control-group">
-            <input list="workspaces" id="dir-input" placeholder="Search Workspace..." value="/" style="width: 300px;">
+            <input list="workspaces" id="dir-input" placeholder="Jump to directory..." value="/" style="width: 350px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);">
             <datalist id="workspaces"></datalist>
             <button onclick="pinWorkspace()" class="icon-btn" title="Pin Workspace">📌</button>
         </div>
         
         <div class="control-group" style="margin-left: auto;">
-            <input type="text" id="search-input" placeholder="Find..." style="width: 180px;" onkeypress="if(event.key==='Enter') searchTerm()">
-            <button onclick="searchTerm()" class="icon-btn">🔍</button>
+            <div id="global-status" style="font-size: 12px; color: #555; font-weight: 700; letter-spacing: 1px;">SYSTEM READY</div>
         </div>
 
-        <button onclick="toggleSidePane()" id="toggle-pane-btn" class="icon-btn" title="Docs">📄</button>
+        <button onclick="toggleSidePane()" id="toggle-pane-btn" class="icon-btn" title="Viewer">📄</button>
         <button class="icon-btn" id="settings-btn" onclick="openSettings()" title="Settings">⚙️</button>
     </div>
+    
     <div id="tab-bar">
-        <button onclick="createTab()" style="background:none; border:none; color:#444; padding: 8px 15px; font-size: 24px; cursor:pointer; font-weight: 300;">+</button>
+        <button onclick="createTab()" style="background:none; border:none; color:var(--accent); padding: 5px 20px; font-size: 30px; cursor:pointer;">+</button>
     </div>
     
     <div id="main-view">
         <div id="terminal-container"></div>
         <div id="side-pane" class="collapsed">
             <div id="side-header">
-                <span>VIEWER</span>
-                <input type="text" id="doc-path" placeholder="Path..." style="width: 220px;" onkeypress="if(event.key==='Enter') loadDoc()">
+                Engineering Viewer
             </div>
-            <div id="doc-content">Enter a file path to view documentation. Drag and drop supported.</div>
+            <div id="doc-content">Drop files here to analyze.</div>
         </div>
     </div>
 
     <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
     
-    <div id="settings-modal" class="modal" style="display: none;">
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
         <div style="display: flex; height: 100%;">
             <div class="modal-sidebar">
-                <div class="nav-item active" onclick="showSection('general', this)">General</div>
-                <div class="nav-item" onclick="showSection('ai', this)">AI Brain</div>
-                <div class="nav-item" onclick="showSection('updates', this)">System</div>
+                <div class="nav-item active" onclick="showSection('general', this)">Identity</div>
+                <div class="nav-item" onclick="showSection('ai', this)">Intelligence</div>
+                <div class="nav-item" onclick="showSection('updates', this)">Core Build</div>
             </div>
             <div class="modal-body">
                 <div id="section-general" class="section active">
-                    <h1 style="margin-top: 0; font-weight: 900; font-size: 28px;">General</h1>
-                    <div class="row">
-                        <label>Environment Shell</label>
-                        <select id="config-shell">
-                            <option value="/bin/zsh">ZSH (Power User)</option>
-                            <option value="/bin/bash">BASH (Default)</option>
-                            <option value="/usr/bin/python3">Python (REPL)</option>
+                    <h1 style="margin-top: 0; font-weight: 900; font-size: 32px;">Identity</h1>
+                    <p style="color: #666; margin-bottom: 40px;">Configure your assistant's behavioral profile.</p>
+                    <div style="margin-bottom: 30px;">
+                        <label style="display:block; margin-bottom: 10px; font-size: 12px; color: #888; font-weight: 900; text-transform: uppercase;">Primary Shell</label>
+                        <select id="config-shell" style="width: 100%; padding: 15px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);">
+                            <option value="/bin/zsh">ZSH (Advanced)</option>
+                            <option value="/bin/bash">BASH (Legacy)</option>
+                            <option value="/usr/bin/python3">Python Runtime</option>
                         </select>
                     </div>
                 </div>
                 
-                <div id="section-ai" class="section">
-                    <h1 style="margin-top: 0; font-weight: 900; font-size: 28px; color: var(--accent);">AI Brain</h1>
-                    <div class="row">
-                        <label>Intelligence Provider</label>
-                        <select id="config-provider">
-                            <option value="ollama">Ollama (Offline)</option>
-                            <option value="gemini">Google Gemini</option>
-                            <option value="openai">OpenAI</option>
-                            <option value="claude">Anthropic Claude</option>
+                <div id="section-ai" class="section" style="display:none;">
+                    <h1 style="margin-top: 0; font-weight: 900; font-size: 32px; color: var(--accent);">Intelligence</h1>
+                    <div style="margin-bottom: 30px;">
+                        <label style="display:block; margin-bottom: 10px; font-size: 12px; color: #888;">AI PROVIDER</label>
+                        <select id="config-provider" style="width: 100%; padding: 15px; background: rgba(0,0,0,0.4); border: 1px solid #333;">
+                            <option value="ollama">Ollama (Offline/Sovereign)</option>
+                            <option value="gemini">Google Gemini Pro</option>
+                            <option value="openai">OpenAI GPT-4o</option>
                         </select>
                     </div>
-                    <div class="row">
-                        <label>Model Identifier</label>
-                        <input type="text" id="config-model" placeholder="e.g. llama3">
+                    <div>
+                        <label style="display:block; margin-bottom: 10px; font-size: 12px; color: #888;">MODEL ID</label>
+                        <input type="text" id="config-model" style="width: 95%; padding: 15px; background: rgba(0,0,0,0.4); border: 1px solid #333;">
                     </div>
                 </div>
 
-                <div id="section-updates" class="section">
-                    <h1 style="margin-top: 0; font-weight: 900; font-size: 28px; color: #FFD700;">System</h1>
-                    <p style="color: #666; font-size: 15px;">Version 0.1.4 Build <span id="current-version" style="color: white;">...</span></p>
-                    <button onclick="checkUpdatesNow()" id="check-update-btn" style="width: 100%; padding: 15px; margin-top: 20px; background: #222; color: white;">Scan for Upgrades</button>
-                    <div id="update-status" style="margin-top: 25px; font-size: 14px; font-weight: 600;"></div>
+                <div id="section-updates" class="section" style="display:none;">
+                    <h1 style="margin-top: 0; font-weight: 900; font-size: 32px; color: #FFD700;">Core Build</h1>
+                    <p style="color: #666;">Version 0.1.5 | Engineering Console</p>
+                    <button onclick="checkUpdatesNow()" style="width: 100%; padding: 20px; margin-top: 40px; background: var(--accent); color: black;">SCAN FOR UPGRADES</button>
+                    <div id="update-status" style="margin-top: 30px; font-weight: 700; color: var(--accent);"></div>
                 </div>
             </div>
         </div>
-        <div style="padding: 25px 40px; background: #121212; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 20px; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;">
-            <button onclick="closeSettings()" style="background: transparent; color: #555;">Discard</button>
-            <button onclick="saveAllSettings()">Apply & Save</button>
-        </div>
-    </div>
-
-    <!-- Keys Modal -->
-    <div id="keys-modal" class="modal" style="display: none; height: auto; min-height: 400px; width: 450px;">
-        <div style="padding: 40px;">
-            <h1 style="margin-top: 0; font-weight: 900; font-size: 24px;">AI API Keys</h1>
-            <p style="color: #666; margin-bottom: 30px;">Get your free or professional keys below:</p>
-            <ul style="list-style: none; padding: 0; font-size: 15px;">
-                <li style="margin-bottom: 20px;"><a href="#" onclick="pywebview.api.open_url('https://aistudio.google.com/app/apikey')" style="color: var(--accent); text-decoration: none; font-weight: 800;">→ Google Gemini (1500 free/day)</a></li>
-                <li style="margin-bottom: 20px;"><a href="#" onclick="pywebview.api.open_url('https://platform.openai.com/api-keys')" style="color: var(--accent); text-decoration: none; font-weight: 800;">→ OpenAI GPT Console</a></li>
-                <li style="margin-bottom: 20px;"><a href="#" onclick="pywebview.api.open_url('https://console.anthropic.com/')" style="color: var(--accent); text-decoration: none; font-weight: 800;">→ Anthropic Claude Console</a></li>
-            </ul>
-            <button style="width: 100%; margin-top: 20px;" onclick="closeKeysModal()">Dismiss</button>
+        <div style="padding: 30px 60px; background: rgba(0,0,0,0.5); border-top: 1px solid var(--glass-border); display: flex; justify-content: flex-end; gap: 25px;">
+            <button onclick="closeSettings()" style="background: transparent; color: #555; border: 1px solid #333;">DISCARD</button>
+            <button onclick="saveAllSettings()" style="background: white; color: black; padding: 12px 30px;">APPLY CHANGES</button>
         </div>
     </div>
 
@@ -341,50 +304,6 @@
     <script>
         let tabs = [];
         let activeTabId = null;
-        let focusableElements = ['dir-input', 'search-input', 'terminal-container', 'warp-input', 'doc-path'];
-        let currentFocusIndex = -1;
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                const direction = e.shiftKey ? -1 : 1;
-                navigateFocus(direction);
-            }
-        });
-
-        function navigateFocus(direction) {
-            currentFocusIndex = (currentFocusIndex + direction + focusableElements.length) % focusableElements.length;
-            const id = focusableElements[currentFocusIndex];
-            
-            if (id === 'terminal-container') {
-                const activeTab = tabs.find(t => t.id === activeTabId);
-                if (activeTab) {
-                    activeTab.term.focus();
-                    document.querySelectorAll('.terminal-instance-wrapper').forEach(w => w.classList.remove('focused'));
-                    document.getElementById(activeTabId).classList.add('focused');
-                }
-            } else if (id === 'warp-input') {
-                const activeWrapper = document.getElementById(activeTabId);
-                if (activeWrapper) {
-                    const input = activeWrapper.querySelector('.warp-input');
-                    if (input) input.focus();
-                }
-            } else {
-                const el = document.getElementById(id);
-                if (el) el.focus();
-                document.querySelectorAll('.terminal-instance-wrapper').forEach(w => w.classList.remove('focused'));
-            }
-        }
-
-        window.addEventListener('pywebviewready', function() {
-            pywebview.api.get_config().then(config => {
-                if(config.pinned_workspaces) updateWorkspaceList(config.pinned_workspaces);
-                document.getElementById('config-shell').value = config.shell || '/bin/zsh';
-                document.getElementById('config-provider').value = config.provider || 'ollama';
-                document.getElementById('config-model').value = config.jarvis_model || 'llama3';
-                createTab();
-            });
-        });
 
         function createTab() {
             const id = 'tab-' + Date.now();
@@ -396,75 +315,72 @@
             termEl.className = 'terminal-instance';
             tabWrapper.appendChild(termEl);
 
-        COMMANDS = [
-            "/chat", "/fix", "/forge", "/decode", "/lookup", "/hardware", "/voice", "/watch", "/config", "/init", "/analyze", "/analyze-file",
-            "/locate", "/undo", "/dashboard", "/memory", "/personality", "/models", "/focus", 
-            "/cloud", "/network", "/ssh", "/server", "/troubleshoot", "/free", "/model", "/help", "/exit"
-        ]
-...
             const cmdBar = document.createElement('div');
             cmdBar.className = 'bottom-command-bar';
             cmdBar.innerHTML = `
-                <div style="display: flex; flex-direction: column; width: 100%;">
-                    <div id="workspace-info-${id}" style="font-size: 10px; color: #666; margin-bottom: 5px; font-family: monospace;">📁 Loading...</div>
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <span class="prompt-symbol">JARVIS ></span>
-                        <input type="text" class="warp-input" placeholder="Type a command or start chatting with JARVIS..." />
-                    </div>
+                <div id="workspace-info-${id}" style="font-size: 11px; color: var(--accent); margin-bottom: 8px; font-family: monospace; letter-spacing: 1px; font-weight: 800;">ISOLATING CONTEXT...</div>
+                <div class="warp-input-container">
+                    <span class="prompt-symbol">JARVIS ></span>
+                    <input type="text" class="warp-input" placeholder="Type command, path, or request..." />
+                    <div id="spinner-${id}" class="loading-ring" style="display:none;"></div>
                 </div>
             `;
-...
-            // Update workspace info periodically
+            
             setInterval(() => {
                 const infoBox = document.getElementById(`workspace-info-${id}`);
                 if(infoBox) {
                     pywebview.api.get_cwd().then(cwd => {
-                        infoBox.innerText = `📁 Workspace: ${cwd}`;
+                        infoBox.innerText = `📁 WORKSPACE: ${cwd}`;
                     });
                 }
-            }, 2000);
+            }, 3000);
+
             const warpInput = cmdBar.querySelector('.warp-input');
+            const spinner = cmdBar.querySelector('.loading-ring');
+            
             warpInput.addEventListener('keypress', (e) => {
                 if(e.key === 'Enter') {
                     const cmd = warpInput.value;
-                    pywebview.api.write_to_pty(id, cmd + '\r');
-                    warpInput.value = '';
+                    spinner.style.display = 'block';
+                    pywebview.api.write_to_pty(id, cmd + '\r').then(() => {
+                        warpInput.value = '';
+                        setTimeout(() => { spinner.style.display = 'none'; }, 1000);
+                    });
                 }
             });
             tabWrapper.appendChild(cmdBar);
-            
             document.getElementById('terminal-container').appendChild(tabWrapper);
 
-            const tabEl = document.createElement('div');
-            tabEl.className = 'tab';
-            tabEl.id = 'label-' + id;
-            tabEl.innerHTML = `<span>Session ${tabs.length + 1}</span><span class="close-tab" onclick="event.stopPropagation(); closeTab('${id}')">✕</span>`;
-            tabEl.onclick = () => switchTab(id);
-            document.getElementById('tab-bar').appendChild(tabEl);
+            const tabLabel = document.createElement('div');
+            tabLabel.className = 'tab';
+            tabLabel.id = 'label-' + id;
+            tabLabel.innerHTML = `<span>SESSION ${tabs.length + 1}</span><span class="close-tab" onclick="event.stopPropagation(); closeTab('${id}')">✕</span>`;
+            tabLabel.onclick = () => switchTab(id);
+            document.getElementById('tab-bar').appendChild(tabLabel);
 
             const term = new Terminal({
-                theme: { background: '#121212', cursor: '#4FC1FF' },
-                fontFamily: '"JetBrains Mono", Menlo, monospace',
-                fontSize: 13,
+                theme: { background: '#000000', cursor: '#00F0FF', foreground: '#FFFFFF' },
+                fontFamily: '"JetBrains Mono", "SF Mono", monospace',
+                fontSize: 14,
                 cursorBlink: true,
                 cursorStyle: 'block'
             });
             const fitAddon = new FitAddon.FitAddon();
-            const searchAddon = new SearchAddon.SearchAddon();
             term.loadAddon(fitAddon);
-            term.loadAddon(searchAddon);
             term.open(termEl);
             fitAddon.fit();
 
             term.onData(data => pywebview.api.write_to_pty(id, data));
 
-            const shell = document.getElementById('config-shell').value || '/bin/zsh';
-            const dir = document.getElementById('dir-input').value;
-            pywebview.api.start_terminal(id, dir, shell).then(() => {
-                setTimeout(() => pywebview.api.write_to_pty(id, 'jarvis\r'), 800);
+            pywebview.api.get_config().then(config => {
+                const shell = config.shell || '/bin/zsh';
+                const dir = document.getElementById('dir-input').value;
+                pywebview.api.start_terminal(id, dir, shell).then(() => {
+                    setTimeout(() => pywebview.api.write_to_pty(id, 'jarvis\r'), 1000);
+                });
             });
 
-            tabs.push({ id, term, fitAddon, searchAddon });
+            tabs.push({ id, term, fitAddon });
             switchTab(id);
         }
 
@@ -481,7 +397,6 @@
                 const activeTab = tabs.find(t => t.id === id);
                 setTimeout(() => {
                     activeTab.fitAddon.fit();
-                    pywebview.api.resize_pty(id, activeTab.term.cols, activeTab.term.rows);
                     activeTab.term.focus();
                 }, 50);
             }
@@ -498,6 +413,15 @@
             }
         }
 
+        function handleDrop(e) {
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+            if(files.length > 0) {
+                const path = files[0].path;
+                pywebview.api.write_to_pty(activeTabId, `/analyze-file ${path}\r`);
+            }
+        }
+
         function openSettings() {
             document.getElementById('settings-modal').style.display = 'block';
             document.getElementById('overlay').style.display = 'block';
@@ -508,23 +432,11 @@
             document.getElementById('overlay').style.display = 'none';
         }
 
-        function openKeysModal() {
-            document.getElementById('keys-modal').style.display = 'block';
-            document.getElementById('overlay').style.display = 'block';
-        }
-
-        function closeKeysModal() {
-            document.getElementById('keys-modal').style.display = 'none';
-            document.getElementById('overlay').style.display = 'none';
-        }
-
-        function closeAllModals() { closeSettings(); closeKeysModal(); }
-
         function showSection(name, el) {
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
             el.classList.add('active');
-            document.getElementById('section-' + name).classList.add('active');
+            document.getElementById('section-' + name).style.display = 'block';
         }
 
         function saveAllSettings() {
@@ -536,65 +448,15 @@
             });
         }
 
-        function checkUpdatesNow(silent = false) {
-            const statusEl = document.getElementById('update-status');
-            if(!silent) statusEl.innerText = "Querying GitHub for latest build...";
-            pywebview.api.check_updates().then(res => {
-                document.getElementById('current-version').innerText = res.current;
-                if(res.latest > res.current) {
-                    statusEl.innerHTML = `Build v${res.latest} Ready. <a href="#" onclick="runUpdateNow()" style="color: var(--accent);">Upgrade Now</a>`;
-                } else if(!silent) statusEl.innerText = "System current.";
-            });
-        }
-
-        function runUpdateNow() {
-            if(confirm("Confirm update and self-repair?")) {
-                pywebview.api.run_update().then(res => alert(res === true ? "Done! Please restart." : res));
-            }
-        }
-
-        function pinWorkspace() {
-            const path = document.getElementById('dir-input').value;
-            pywebview.api.add_pinned_workspace(path).then(pinned => updateWorkspaceList(pinned));
-        }
-
-        function updateWorkspaceList(pinned) {
-            const dl = document.getElementById('workspaces');
-            dl.innerHTML = '';
-            pinned.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p;
-                dl.appendChild(opt);
-            });
-        }
-
-        function searchTerm() {
-            const query = document.getElementById('search-input').value;
-            const activeTab = tabs.find(t => t.id === activeTabId);
-            if(activeTab && query) activeTab.searchAddon.findNext(query);
-        }
-
-        function loadDoc() {
-            const path = document.getElementById('doc-path').value;
-            pywebview.api.read_file(path).then(content => document.getElementById('doc-content').innerText = content);
-        }
-
         function toggleSidePane() {
-            const pane = document.getElementById('side-pane');
-            pane.classList.toggle('collapsed');
-            const activeTab = tabs.find(t => t.id === activeTabId);
-            if(activeTab) {
-                setTimeout(() => {
-                    activeTab.fitAddon.fit();
-                    pywebview.api.resize_pty(activeTabId, activeTab.term.cols, activeTab.term.rows);
-                }, 300);
-            }
+            document.getElementById('side-pane').classList.toggle('collapsed');
         }
 
-        function writeToTerminal(id, data) {
-            const tab = tabs.find(t => t.id === id);
-            if(tab) tab.term.write(data);
-        }
+        function closeAllModals() { closeSettings(); }
+
+        window.addEventListener('pywebviewready', () => {
+            createTab();
+        });
     </script>
 </body>
 </html>
