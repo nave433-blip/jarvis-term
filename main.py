@@ -38,8 +38,22 @@ if __name__ == "__main__":
     import json
     from pathlib import Path
     import webbrowser
+    import traceback
+
+    def term_repair_hook(exctype, value, tb):
+        error_msg = "".join(traceback.format_exception(exctype, value, tb))
+        print("\n--- JARVIS TERM CRITICAL ERROR ---")
+        print(error_msg)
+        # Since this is a GUI, we might want to log to a file or show a message box
+        with open("crash_log.txt", "w") as f:
+            f.write(error_msg)
+        print("Crash log saved to crash_log.txt")
+        sys.__excepthook__(exctype, value, tb)
+
+    sys.excepthook = term_repair_hook
 
     class Api:
+
         def __init__(self):
             self.ptys = {} # tab_id -> fd
             self.window = None
