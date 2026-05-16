@@ -6,11 +6,14 @@ import termios
 import struct
 import select
 import threading
+import json
+from pathlib import Path
 
 class Api:
     def __init__(self):
         self.ptys = {} # tab_id -> fd
         self.window = None
+        self.config_path = Path.home() / ".jarvis" / "config.json"
 
     def set_window(self, window):
         self.window = window
@@ -62,14 +65,45 @@ class Api:
             winsize = struct.pack("HHHH", rows, cols, 0, 0)
             fcntl.ioctl(fd, termios.TIOCSWINSZ, winsize)
 
+    def get_config(self):
+        if self.config_path.exists():
+            with open(self.config_path, "r") as f:
+                return json.load(f)
+        return {}
+
+    def save_config_field(self, key, value):
+        config = self.get_config()
+        config[key] = value
+        self.config_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(self.config_path, "w") as f:
+            json.dump(config, f, indent=4)
+        return True
+
+    def read_file(self, file_path):
+        try:
+            if os.path.exists(file_path):
+                with open(file_path, "r") as f:
+                    return f.read()
+            return "Error: File not found."
+        except Exception as e:
+            return f"Error reading file: {e}"
+
+    def list_dir_files(self, path):
+        try:
+            if os.path.exists(path):
+                return [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+            return []
+        except Exception:
+            return []
+
 if __name__ == '__main__':
     api = Api()
     window = webview.create_window(
         'Jarvis Term - Warp Style',
         'index.html',
         js_api=api,
-        width=1100,
-        height=750,
+        width=1200,
+        height=800,
         background_color='#1E1E1E'
     )
     api.set_window(window)
