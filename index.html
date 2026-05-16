@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jarvis Term</title>
+    <title>Jarvis</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
     <style>
         :root {
@@ -11,7 +11,7 @@
             --top: #2D2D2D;
             --accent: #007ACC;
             --text: #FFFFFF;
-            --border: #3E3E3E;
+            --border: #333333;
             --side: #252526;
             --input-bg: #2A2D2E;
         }
@@ -20,7 +20,7 @@
             padding: 0;
             background-color: var(--bg);
             color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
             display: flex;
             flex-direction: column;
             height: 100vh;
@@ -28,10 +28,10 @@
         }
         #top-bar {
             background-color: var(--top);
-            padding: 5px 15px;
+            padding: 8px 15px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 15px;
             border-bottom: 1px solid var(--border);
             z-index: 10;
         }
@@ -39,39 +39,47 @@
             background-color: #252526;
             display: flex;
             gap: 2px;
-            padding: 0 10px;
+            padding: 0 5px;
             border-bottom: 1px solid var(--border);
+            height: 35px;
+            align-items: flex-end;
         }
         .tab {
-            padding: 8px 20px;
+            padding: 6px 15px;
             background-color: #2D2D2D;
             font-size: 11px;
             cursor: pointer;
-            border-right: 1px solid var(--border);
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
             color: #999;
-            min-width: 80px;
+            min-width: 100px;
             text-align: center;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: -1px;
+            border: 1px solid var(--border);
+            border-bottom: none;
         }
         .tab.active {
             background-color: var(--bg);
             color: white;
-            border-bottom: 2px solid var(--accent);
+            border-top: 2px solid var(--accent);
+            z-index: 5;
         }
-        .tab .close-tab { font-size: 10px; color: #555; }
-        .tab .close-tab:hover { color: #f44; }
+        .tab .close-tab { font-size: 10px; color: #555; padding: 2px; border-radius: 2px; }
+        .tab .close-tab:hover { color: #f44; background: #333; }
 
-        .control-group { display: flex; align-items: center; gap: 5px; }
-        label { font-size: 10px; text-transform: uppercase; color: #888; }
+        .control-group { display: flex; align-items: center; gap: 8px; }
+        label { font-size: 10px; text-transform: uppercase; color: #666; font-weight: bold; }
         select, input {
-            background-color: #1E1E1E;
+            background-color: #121212;
             color: #FFF;
-            border: 1px solid #444;
-            padding: 4px 8px;
+            border: 1px solid #333;
+            padding: 5px 10px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 12px;
             outline: none;
         }
         select:focus, input:focus { border-color: var(--accent); }
@@ -101,28 +109,29 @@
         }
         .terminal-instance { flex-grow: 1; padding: 10px; }
         
-        /* Warp-Style Bottom Input */
         .bottom-command-bar {
-            background-color: var(--top);
-            padding: 8px 15px;
+            background-color: #1A1A1A;
+            padding: 12px 20px;
             border-top: 1px solid var(--border);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
-        .prompt-symbol { color: var(--accent); font-weight: bold; font-family: monospace; }
+        .prompt-symbol { color: var(--accent); font-weight: 900; font-family: 'Menlo', monospace; font-size: 14px; }
         .warp-input {
             flex-grow: 1;
-            background: var(--input-bg);
-            border: none;
+            background: #252526;
+            border: 1px solid #333;
             color: white;
-            font-family: 'Menlo', 'Monaco', monospace;
+            font-family: 'JetBrains Mono', 'Menlo', 'Monaco', monospace;
             font-size: 13px;
-            padding: 5px;
+            padding: 8px 12px;
+            border-radius: 6px;
         }
+        .warp-input:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(0, 122, 204, 0.2); }
 
         #side-pane {
-            width: 350px;
+            width: 380px;
             background-color: var(--side);
             border-left: 1px solid var(--border);
             display: flex;
@@ -131,40 +140,42 @@
         }
         #side-pane.collapsed { width: 0; display: none; }
         #side-header {
-            padding: 10px;
+            padding: 12px;
             background-color: #2D2D2D;
             border-bottom: 1px solid var(--border);
             font-size: 12px;
             font-weight: 600;
             display: flex;
+            align-items: center;
             justify-content: space-between;
         }
         #doc-content {
-            padding: 15px;
+            padding: 20px;
             font-size: 13px;
             overflow-y: auto;
             white-space: pre-wrap;
-            color: #CCC;
-            line-height: 1.5;
+            color: #DDD;
+            line-height: 1.6;
+            font-family: 'JetBrains Mono', 'Menlo', monospace;
         }
 
         button {
             background-color: var(--accent);
             color: white;
             border: none;
-            padding: 4px 10px;
+            padding: 6px 12px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 12px;
+            font-weight: 600;
         }
         button:hover { filter: brightness(1.2); }
-        .icon-btn { background: none; font-size: 16px; color: #AAA; }
-        .icon-btn:hover { color: white; }
-        .logo { font-weight: 800; font-size: 14px; color: #4EC9B0; display: flex; align-items: center; gap: 8px; }
-        .logo img { width: 18px; height: 18px; border-radius: 3px; }
+        .icon-btn { background: none; font-size: 18px; color: #888; border: none; padding: 5px; cursor: pointer; }
+        .icon-btn:hover { color: white; background: #333; border-radius: 4px; }
+        .logo { font-weight: 900; font-size: 15px; color: #4EC9B0; display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px; }
+        .logo img { width: 22px; height: 22px; border-radius: 4px; }
         
-        /* Robust Settings Modal */
-        #settings-modal {
+        #settings-modal, #keys-modal {
             display: none;
             position: fixed;
             top: 50%; left: 50%;
@@ -173,42 +184,43 @@
             border-radius: 12px;
             border: 1px solid var(--border);
             z-index: 100;
-            width: 600px;
-            height: 450px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            width: 650px;
+            height: 500px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
             display: flex;
             flex-direction: column;
         }
         #settings-sidebar {
-            width: 150px;
+            width: 180px;
             background: #252526;
             border-right: 1px solid var(--border);
-            padding: 20px 0;
+            padding: 30px 0;
         }
         .settings-nav-item {
-            padding: 10px 20px;
-            font-size: 13px;
+            padding: 12px 25px;
+            font-size: 14px;
             cursor: pointer;
-            color: #AAA;
+            color: #888;
         }
         .settings-nav-item.active {
-            background: #37373d;
+            background: #2D2D30;
             color: white;
-            border-left: 3px solid var(--accent);
+            border-left: 4px solid var(--accent);
+            font-weight: 600;
         }
-        #settings-body { flex-grow: 1; padding: 25px; overflow-y: auto; }
+        #settings-body { flex-grow: 1; padding: 35px; overflow-y: auto; }
         .settings-section { display: none; }
         .settings-section.active { display: block; }
         .overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
             z-index: 99;
         }
-        .config-row { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; }
-        .config-row label { font-size: 11px; color: #888; }
-        .config-row input { width: 100%; padding: 8px; background: #2D2D2D; border: 1px solid #444; }
+        .config-row { margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+        .config-row label { font-size: 11px; color: #777; text-transform: uppercase; letter-spacing: 1px; }
+        .config-row input, .config-row select { width: 100%; padding: 10px; background: #121212; border: 1px solid #333; color: white; border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -218,91 +230,100 @@
             JARVIS
         </div>
         <div class="control-group">
-            <label>Workspce:</label>
-            <input list="workspaces" id="dir-input" placeholder="Search or Type Path..." value="/" style="width: 200px;">
+            <input list="workspaces" id="dir-input" placeholder="Search Workspace..." value="/" style="width: 250px;">
             <datalist id="workspaces"></datalist>
-            <button onclick="pinWorkspace()" class="icon-btn" title="Pin Workspace">📌</button>
+            <button onclick="pinWorkspace()" class="icon-btn" title="Pin Current Path">📌</button>
         </div>
-        <button id="add-tab-btn" style="margin-left: 10px;">+ New Session</button>
         
-        <div class="control-group" style="margin-left: 15px;">
-            <input type="text" id="search-input" placeholder="Search session..." style="width: 120px;" onkeypress="if(event.key==='Enter') searchTerm()">
+        <div class="control-group" style="margin-left: auto;">
+            <input type="text" id="search-input" placeholder="Find in session..." style="width: 150px;" onkeypress="if(event.key==='Enter') searchTerm()">
             <button onclick="searchTerm()" class="icon-btn">🔍</button>
         </div>
 
-        <button onclick="toggleSidePane()" id="toggle-pane-btn" class="icon-btn" style="margin-left: 15px;">📄</button>
-        <button class="icon-btn" id="settings-btn" style="margin-left: auto;">⚙️</button>
+        <button onclick="toggleSidePane()" id="toggle-pane-btn" class="icon-btn" title="Toggle Document Viewer">📄</button>
+        <button class="icon-btn" id="settings-btn" onclick="openSettings()" title="Global Settings">⚙️</button>
     </div>
-    <div id="tab-bar"></div>
+    <div id="tab-bar">
+        <!-- New Session shortcut button -->
+        <button onclick="createTab()" style="background:none; border:none; color:#555; padding: 5px 10px; font-size: 20px; cursor:pointer;">+</button>
+    </div>
     
     <div id="main-view">
         <div id="terminal-container"></div>
         <div id="side-pane" class="collapsed">
             <div id="side-header">
-                <span>Integrated Viewer</span>
-                <input type="text" id="doc-path" placeholder="Path to view..." style="width: 180px;" onkeypress="if(event.key==='Enter') loadDoc()">
+                <span style="letter-spacing: 1px; font-size: 10px; text-transform: uppercase; color: #888;">Documentation</span>
+                <input type="text" id="doc-path" placeholder="Path to view..." style="width: 200px;" onkeypress="if(event.key==='Enter') loadDoc()">
             </div>
-            <div id="doc-content">Drag a file here or type its path above to view...</div>
+            <div id="doc-content">Enter a file path to view documentation side-by-side with your terminal.</div>
         </div>
     </div>
 
-    <div class="overlay" id="overlay" onclick="closeSettings()"></div>
+    <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
     
+    <!-- Robust Settings Modal -->
     <div id="settings-modal" style="display: none;">
         <div style="display: flex; height: 100%;">
             <div id="settings-sidebar">
                 <div class="settings-nav-item active" onclick="showSettingsSection('general', this)">General</div>
-                <div class="settings-nav-item" onclick="showSettingsSection('ai', this)">AI Brain</div>
-                <div class="settings-nav-item" onclick="showSettingsSection('updates', this)">Updates</div>
+                <div class="settings-nav-item" onclick="showSettingsSection('ai', this)">AI Assistant</div>
+                <div class="settings-nav-item" onclick="showSettingsSection('updates', this)">System Updates</div>
             </div>
             <div id="settings-body">
                 <div id="section-general" class="settings-section active">
-                    <h2 style="margin-top: 0;">General Settings</h2>
+                    <h2 style="margin-top: 0; font-weight: 900; color: var(--accent);">General</h2>
                     <div class="config-row">
-                        <label>Default Shell</label>
-                        <select id="config-shell" style="width: 100%;">
-                            <option value="/bin/zsh">ZSH (Recommended)</option>
-                            <option value="/bin/bash">BASH</option>
+                        <label>Standard Environment</label>
+                        <select id="config-shell">
+                            <option value="/bin/zsh">ZSH (Advanced)</option>
+                            <option value="/bin/bash">BASH (Legacy)</option>
+                            <option value="/usr/bin/python3">Python Interactive</option>
                         </select>
                     </div>
-                    <div class="config-row">
-                        <label>Auto-Analyze Dropped Files</label>
-                        <input type="checkbox" id="config-auto-analyze" checked style="width: 20px;">
-                    </div>
+                    <p style="font-size: 12px; color: #666;">New sessions will automatically initialize in this environment with JARVIS agent pre-loaded.</p>
                 </div>
                 
                 <div id="section-ai" class="settings-section">
-                    <h2 style="margin-top: 0;">AI Brain Configuration</h2>
+                    <h2 style="margin-top: 0; font-weight: 900; color: #4EC9B0;">AI Assistant</h2>
                     <div class="config-row">
-                        <label>Active Provider</label>
-                        <select id="config-provider" style="width: 100%;">
-                            <option value="ollama">Ollama (Offline)</option>
-                            <option value="gemini">Google Gemini</option>
-                            <option value="openai">OpenAI</option>
-                            <option value="claude">Anthropic Claude</option>
+                        <label>Active Intelligence Provider</label>
+                        <select id="config-provider">
+                            <option value="ollama">Ollama (Offline/Private)</option>
+                            <option value="gemini">Google Gemini (Hybrid)</option>
+                            <option value="openai">OpenAI (Cloud)</option>
+                            <option value="claude">Anthropic Claude (Research)</option>
                         </select>
                     </div>
                     <div class="config-row">
-                        <label>Primary Model</label>
+                        <label>Model String</label>
                         <input type="text" id="config-model" placeholder="e.g. llama3, gpt-4o">
                     </div>
                 </div>
 
                 <div id="section-updates" class="settings-section">
-                    <h2 style="margin-top: 0;">Software Updates</h2>
-                    <p style="font-size: 13px; color: #AAA;">Current Version: <span id="current-version">0.1.2</span></p>
-                    <div class="config-row">
-                        <label>Check for updates automatically</label>
-                        <input type="checkbox" id="config-auto-update" checked style="width: 20px;">
-                    </div>
-                    <button onclick="checkUpdatesNow()" id="check-update-btn" style="width: 100%; padding: 10px; margin-top: 10px;">Check for Updates Now</button>
-                    <div id="update-status" style="margin-top: 15px; font-size: 12px; color: #4EC9B0;"></div>
+                    <h2 style="margin-top: 0; font-weight: 900; color: #FFD700;">Updates</h2>
+                    <p style="font-size: 14px; color: #AAA;">Build: <span id="current-version" style="color: white; font-family: monospace;">0.1.2</span></p>
+                    <button onclick="checkUpdatesNow()" id="check-update-btn" style="width: 100%; padding: 12px; margin-top: 20px; background: #333;">Check for Updates</button>
+                    <div id="update-status" style="margin-top: 20px; font-size: 13px; color: #4EC9B0;"></div>
                 </div>
             </div>
         </div>
-        <div style="position: absolute; bottom: 15px; right: 25px;">
-            <button onclick="closeSettings()" style="background: #444;">Cancel</button>
-            <button onclick="saveAllSettings()" style="margin-left: 10px;">Save & Apply</button>
+        <div style="padding: 20px; background: #252526; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 15px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+            <button onclick="closeSettings()" style="background: transparent; color: #888;">Cancel</button>
+            <button onclick="saveAllSettings()">Apply Changes</button>
+        </div>
+    </div>
+
+    <!-- API Keys Modal -->
+    <div id="keys-modal" style="display: none; height: auto; min-height: 350px;">
+        <div style="padding: 30px;">
+            <h2 style="margin-top: 0; font-weight: 900; color: #FFD700;">API Gateway</h2>
+            <ul style="list-style: none; padding: 0; font-size: 14px;">
+                <li style="margin-bottom: 15px;"><a href="#" onclick="pywebview.api.open_url('https://aistudio.google.com/app/apikey')" style="color: #4EC9B0; text-decoration: none; font-weight: bold;">→ Get Google Gemini Key (Free)</a></li>
+                <li style="margin-bottom: 15px;"><a href="#" onclick="pywebview.api.open_url('https://platform.openai.com/api-keys')" style="color: #4EC9B0; text-decoration: none; font-weight: bold;">→ Get OpenAI API Key</a></li>
+                <li style="margin-bottom: 15px;"><a href="#" onclick="pywebview.api.open_url('https://console.anthropic.com/settings/keys')" style="color: #4EC9B0; text-decoration: none; font-weight: bold;">→ Get Anthropic Key</a></li>
+            </ul>
+            <button style="width: 100%; margin-top: 30px;" onclick="closeKeysModal()">Close</button>
         </div>
     </div>
 
@@ -314,25 +335,18 @@
         let activeTabId = null;
 
         window.addEventListener('pywebviewready', function() {
-            createTab();
-            
-            // Load current config
+            // Load current config and then start first tab
             pywebview.api.get_config().then(config => {
                 if(config.pinned_workspaces) updateWorkspaceList(config.pinned_workspaces);
-                
-                // Sync settings fields
                 document.getElementById('config-shell').value = config.shell || '/bin/zsh';
                 document.getElementById('config-provider').value = config.provider || 'ollama';
                 document.getElementById('config-model').value = config.jarvis_model || 'llama3';
-                document.getElementById('config-auto-update').checked = config.auto_update !== false;
                 
-                if(config.auto_update !== false) {
-                    checkUpdatesNow(true);
-                }
+                // Initialize first session
+                createTab();
+                
+                if(config.auto_update !== false) checkUpdatesNow(true);
             });
-
-            document.getElementById('add-tab-btn').addEventListener('click', () => createTab());
-            document.getElementById('settings-btn').addEventListener('click', openSettings);
         });
 
         function createTab() {
@@ -341,17 +355,15 @@
             tabWrapper.className = 'terminal-instance-wrapper';
             tabWrapper.id = id;
             
-            // Main Terminal area
             const termEl = document.createElement('div');
             termEl.className = 'terminal-instance';
             tabWrapper.appendChild(termEl);
 
-            // Warp-style command bar
             const cmdBar = document.createElement('div');
             cmdBar.className = 'bottom-command-bar';
             cmdBar.innerHTML = `
                 <span class="prompt-symbol">JARVIS ></span>
-                <input type="text" class="warp-input" placeholder="Type a command or start chatting..." />
+                <input type="text" class="warp-input" placeholder="Type a command or start chatting with JARVIS..." />
             `;
             const warpInput = cmdBar.querySelector('.warp-input');
             warpInput.addEventListener('keypress', (e) => {
@@ -374,13 +386,15 @@
 
             const term = new Terminal({
                 theme: { background: '#1E1E1E' },
-                fontFamily: 'Menlo, Monaco, monospace',
+                fontFamily: '"SF Mono", Menlo, Monaco, monospace',
                 fontSize: 12,
-                cursorBlink: true
+                cursorBlink: true,
+                cursorStyle: 'block'
             });
             const fitAddon = new FitAddon.FitAddon();
             const searchAddon = new SearchAddon.SearchAddon();
             term.loadAddon(fitAddon);
+            term.loadAddon(searchAddon);
             term.open(termEl);
             fitAddon.fit();
 
@@ -388,14 +402,23 @@
                 pywebview.api.write_to_pty(id, data);
             });
 
-            // Auto-start in zsh and launch jarvis
+            // Warp-style Drag and Drop
+            termEl.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+            termEl.addEventListener('drop', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                if (e.dataTransfer.files.length > 0) {
+                    const path = e.dataTransfer.files[0].path;
+                    pywebview.api.write_to_pty(id, `/analyze-file "${path}"\r`);
+                }
+            });
+
             const shell = document.getElementById('config-shell').value || '/bin/zsh';
             const dir = document.getElementById('dir-input').value;
             pywebview.api.start_terminal(id, dir, shell).then(() => {
-                // Wait for shell to load then start jarvis
+                // Initial welcome or JARVIS startup
                 setTimeout(() => {
                     pywebview.api.write_to_pty(id, 'jarvis\r');
-                }, 500);
+                }, 800);
             });
 
             tabs.push({ id, term, fitAddon, searchAddon });
@@ -426,12 +449,13 @@
                 document.getElementById(id).remove();
                 document.getElementById('label-' + id).remove();
                 tabs.splice(index, 1);
-                if(activeTabId === id && tabs.length > 0) {
-                    switchTab(tabs[tabs.length-1].id);
-                } else if(tabs.length === 0) {
-                    createTab();
-                }
+                if(activeTabId === id && tabs.length > 0) switchTab(tabs[tabs.length-1].id);
+                else if(tabs.length === 0) createTab();
             }
+        }
+
+        function closeActiveTab() {
+            if(activeTabId) closeTab(activeTabId);
         }
 
         function openSettings() {
@@ -444,6 +468,21 @@
             document.getElementById('overlay').style.display = 'none';
         }
 
+        function openKeysModal() {
+            document.getElementById('keys-modal').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function closeKeysModal() {
+            document.getElementById('keys-modal').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        function closeAllModals() {
+            closeSettings();
+            closeKeysModal();
+        }
+
         function showSettingsSection(name, el) {
             document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
             document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
@@ -452,37 +491,33 @@
         }
 
         function saveAllSettings() {
-            const config = {
-                shell: document.getElementById('config-shell').value,
-                provider: document.getElementById('config-provider').value,
-                jarvis_model: document.getElementById('config-model').value,
-                auto_update: document.getElementById('config-auto-update').checked
-            };
-            pywebview.api.save_config(config).then(() => {
-                alert("Settings saved successfully!");
-                closeSettings();
+            pywebview.api.get_config().then(config => {
+                config.shell = document.getElementById('config-shell').value;
+                config.provider = document.getElementById('config-provider').value;
+                config.jarvis_model = document.getElementById('config-model').value;
+                pywebview.api.save_config(config).then(() => {
+                    closeSettings();
+                });
             });
         }
 
         function checkUpdatesNow(silent = false) {
             const statusEl = document.getElementById('update-status');
-            if(!silent) statusEl.innerText = "Checking GitHub for updates...";
-            
+            if(!silent) statusEl.innerText = "Querying GitHub for latest build...";
             pywebview.api.check_updates().then(res => {
                 document.getElementById('current-version').innerText = res.current;
                 if(res.latest > res.current) {
-                    statusEl.innerHTML = `New version available: <b>v${res.latest}</b>. <a href="#" onclick="runUpdateNow()" style="color: #007ACC;">Update Now</a>`;
-                    if(!silent) alert("A new version of JARVIS is available!");
+                    statusEl.innerHTML = `New Version: <b>v${res.latest}</b> is ready! <a href="#" onclick="runUpdateNow()" style="color: #4EC9B0;">Apply Update</a>`;
                 } else {
-                    if(!silent) statusEl.innerText = "You are running the latest version.";
+                    if(!silent) statusEl.innerText = "System is up to date.";
                 }
             });
         }
 
         function runUpdateNow() {
-            if(confirm("JARVIS will pull the latest code and restart. Continue?")) {
+            if(confirm("Confirm: Pull latest build and perform self-repair?")) {
                 pywebview.api.run_update().then(res => {
-                    alert(res === true ? "Update successful! JARVIS will now restart." : res);
+                    alert(res === true ? "Rebuild successful! Please restart JARVIS." : res);
                 });
             }
         }
