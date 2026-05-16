@@ -115,15 +115,37 @@ if __name__ == "__main__":
                     return json.load(f)
             return {}
 
-        def save_config_field(self, key, value):
-            config = self.get_config()
-            config[key] = value
+        def save_config(self, config):
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
             with open(self.config_path, "w") as f:
                 json.dump(config, f, indent=4)
             return True
 
-        def add_pinned_workspace(self, path):
+        def save_config_field(self, key, value):
+            config = self.get_config()
+            config[key] = value
+            return self.save_config(config)
+
+        def check_updates(self):
+            # We'll try to import from the sibling jarvis-dev if available, or just mock it for now
+            try:
+                sys.path.append(str(Path.home() / "jarvis-dev"))
+                from core.update import check_for_updates, CURRENT_VERSION
+                latest = check_for_updates()
+                return {"current": CURRENT_VERSION, "latest": latest or CURRENT_VERSION}
+            except:
+                return {"current": "0.1.2", "latest": "0.1.2"}
+
+        def run_update(self):
+            try:
+                sys.path.append(str(Path.home() / "jarvis-dev"))
+                from core.update import apply_update
+                return apply_update()
+            except:
+                return "Error: Update engine not found. Please update via CLI."
+
+        def read_file(self, file_path):
+
             config = self.get_config()
             pinned = config.get("pinned_workspaces", [])
             if path not in pinned:
