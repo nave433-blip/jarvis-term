@@ -1,6 +1,6 @@
 cask "jarvis-term" do
   version "0.1.7"
-  sha256 "60b6a0cc5bda27c2de95caa6babca045cea8443aeeae108cc0268e3ae6ccd9c9"
+  sha256 "c52769a7beb395417d096869eb1c7cdc809078515d296c93797262655c6c694c"
 
   url "https://github.com/nave433-blip/jarvis-term/releases/download/v#{version}/JarvisTerm-mac.zip"
   name "Jarvis Term"

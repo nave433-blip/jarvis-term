@@ -452,7 +452,77 @@
             document.getElementById('side-pane').classList.toggle('collapsed');
         }
 
-        function closeAllModals() { closeSettings(); }
+        // Minimal renderer for the "ui" object (Gemini-Style Cards)
+        function renderCard(ui, id) {
+            if (!ui) return;
+            const tabWrapper = document.getElementById(id);
+            const card = document.createElement('div');
+            card.style.cssText = `
+                border: 1px solid var(--glass-border);
+                border-radius: 12px;
+                padding: 20px;
+                background: rgba(255, 255, 255, 0.05);
+                margin: 20px 40px;
+                backdrop-filter: blur(10px);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                font-family: 'Inter', sans-serif;
+            `;
+
+            if (ui.title) {
+                const t = document.createElement('div');
+                t.style.cssText = "font-weight: 800; font-size: 18px; color: var(--accent); margin-bottom: 5px;";
+                t.textContent = ui.title;
+                card.appendChild(t);
+            }
+            if (ui.subtitle) {
+                const s = document.createElement('div');
+                s.style.cssText = "color: #888; font-size: 13px; margin-bottom: 15px; font-weight: 600;";
+                s.textContent = ui.subtitle;
+                card.appendChild(s);
+            }
+            if (ui.markdown) {
+                const m = document.createElement('div');
+                m.style.cssText = "color: #DDD; font-size: 14px; margin-bottom: 20px; line-height: 1.6;";
+                m.innerHTML = ui.markdown.replace(/`([^`]+)`/g, '<code style="background:rgba(0,0,0,0.5); padding:2px 6px; border-radius:4px;">$1</code>').replace(/\n/g, '<br/>');
+                card.appendChild(m);
+            }
+
+            const btnRow = document.createElement('div');
+            btnRow.style.cssText = "display: flex; gap: 12px;";
+            (ui.buttons || []).slice(0,3).forEach((b) => {
+                const btn = document.createElement('button');
+                btn.style.cssText = `
+                    padding: 10px 20px;
+                    border-radius: 8px;
+                    border: 1px solid ${b.primary ? 'var(--accent)' : '#444'};
+                    background: ${b.primary ? 'rgba(0, 240, 255, 0.1)' : 'transparent'};
+                    color: ${b.primary ? 'var(--accent)' : '#AAA'};
+                    cursor: pointer;
+                    font-size: 13px;
+                    font-weight: 700;
+                    transition: 0.3s;
+                `;
+                btn.textContent = b.label;
+                btn.onmouseenter = () => btn.style.background = 'rgba(0, 240, 255, 0.2)';
+                btn.onmouseleave = () => btn.style.background = b.primary ? 'rgba(0, 240, 255, 0.1)' : 'transparent';
+                
+                btn.addEventListener('click', () => {
+                    // Send specific command back to terminal based on action
+                    if(b.action === 'run' || b.action === 'confirm') {
+                        pywebview.api.write_to_pty(id, '\r'); // Just hit enter if it's already staged or needs confirm
+                    } else if(b.action === 'help') {
+                        pywebview.api.write_to_pty(id, '/help\r');
+                    }
+                    card.remove(); // Dismiss after click
+                });
+                btnRow.appendChild(btn);
+            });
+            card.appendChild(btnRow);
+            
+            // Insert before the command bar
+            const cmdBar = tabWrapper.querySelector('.bottom-command-bar');
+            tabWrapper.insertBefore(card, cmdBar);
+        }
 
         window.addEventListener('pywebviewready', () => {
             createTab();
