@@ -7,7 +7,7 @@ def build():
     
     # We need to include the index.html
     cmd = [
-        "pyinstaller",
+        sys.executable, "-m", "PyInstaller",
         "--noconfirm",
         "--onedir",
         "--windowed",
