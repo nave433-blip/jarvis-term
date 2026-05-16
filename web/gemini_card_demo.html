@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Gemini-style UI Card Demo</title>
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, Roboto, sans-serif; padding: 20px; background:#f6f7fb; }
+    .card { border:1px solid #e6e9ef; border-radius:8px; padding:12px; background:#fff; max-width:600px; }
+    .title { font-weight:600; font-size:16px; margin-bottom:4px; }
+    .subtitle { color:#555; margin-bottom:8px; }
+    .markdown { color:#333; margin-bottom:10px; }
+    .buttons { display:flex; gap:8px; }
+    .btn { padding:6px 10px; border-radius:6px; border:1px solid #ccc; background:#fff; cursor:pointer; }
+    .btn.primary { background:#0b5fff; color:#fff; border:none; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    // Minimal renderer for the "ui" object
+    function renderCard(ui, container) {
+      container.innerHTML = '';
+      if (!ui) return;
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      if (ui.title) {
+        const t = document.createElement('div');
+        t.className = 'title';
+        t.textContent = ui.title;
+        card.appendChild(t);
+      }
+      if (ui.subtitle) {
+        const s = document.createElement('div');
+        s.className = 'subtitle';
+        s.textContent = ui.subtitle;
+        card.appendChild(s);
+      }
+      if (ui.markdown) {
+        const m = document.createElement('div');
+        m.className = 'markdown';
+        // basic inline code rendering and newline handling
+        m.innerHTML = ui.markdown.replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\n/g, '<br/>');
+        card.appendChild(m);
+      }
+
+      const btnRow = document.createElement('div');
+      btnRow.className = 'buttons';
+      (ui.buttons || []).slice(0,3).forEach((b) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn' + (b.primary ? ' primary' : '');
+        btn.textContent = b.label;
+        btn.addEventListener('click', () => {
+          // Dispatch a custom event with semantic action so host can react
+          const ev = new CustomEvent('gemini-action', { detail: { action: b.action, button: b }});
+          window.dispatchEvent(ev);
+        });
+        btnRow.appendChild(btn);
+      });
+      card.appendChild(btnRow);
+      container.appendChild(card);
+    }
+
+    // Demo: listen to events
+    window.addEventListener('gemini-action', (e) => {
+      const { action, button } = e.detail;
+      const log = document.getElementById('log');
+      const line = document.createElement('div');
+      line.textContent = 'Action: ' + action + ' (label: ' + button.label + ')';
+      log.appendChild(line);
+      // Example: map run -> call backend, confirm-> prompt, help-> show commands
+      // Integrate with your command handler here.
+    });
+
+    // Example UI object (from your few-shot examples)
+    const exampleUi = {
+      title: "Delete .pyc files",
+      subtitle: "This will permanently delete files under /usr/local/lib",
+      markdown: 'find /usr/local/lib -name "*.pyc" -delete',
+      buttons: [
+        { label: "Delete (requires confirmation)", action: "confirm", primary: true },
+        { label: "Cancel", action: "cancel" }
+      ]
+    };
+
+    const root = document.getElementById('root');
+    const container = document.createElement('div');
+    root.appendChild(container);
+
+    renderCard(exampleUi, container);
+
+    // add log area
+    const log = document.createElement('div');
+    log.id = 'log';
+    log.style.marginTop = '16px';
+    root.appendChild(log);
+  </script>
+</body>
+</html>
