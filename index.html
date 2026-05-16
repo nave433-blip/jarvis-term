@@ -333,6 +333,40 @@
     <script>
         let tabs = [];
         let activeTabId = null;
+        let focusableElements = ['dir-input', 'search-input', 'terminal-container', 'warp-input', 'doc-path'];
+        let currentFocusIndex = -1;
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const direction = e.shiftKey ? -1 : 1;
+                navigateFocus(direction);
+            }
+        });
+
+        function navigateFocus(direction) {
+            currentFocusIndex = (currentFocusIndex + direction + focusableElements.length) % focusableElements.length;
+            const id = focusableElements[currentFocusIndex];
+            
+            // If it's terminal-container, focus the actual xterm instance
+            if (id === 'terminal-container') {
+                const activeTab = tabs.find(t => t.id === activeTabId);
+                if (activeTab) {
+                    activeTab.term.focus();
+                    document.querySelectorAll('.terminal-instance-wrapper').forEach(w => w.classList.remove('focused'));
+                    document.getElementById(activeTabId).classList.add('focused');
+                }
+            } else if (id === 'warp-input') {
+                const activeWrapper = document.getElementById(activeTabId);
+                if (activeWrapper) {
+                    const input = activeWrapper.querySelector('.warp-input');
+                    if (input) input.focus();
+                }
+            } else {
+                const el = document.getElementById(id);
+                if (el) el.focus();
+            }
+        }
 
         window.addEventListener('pywebviewready', function() {
             // Load current config and then start first tab
