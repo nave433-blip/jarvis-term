@@ -1,0 +1,4 @@
+# Jarvis Term Release Checksums (v0.1.4)
+# Generated on: 2026-05-16
+
+7ffc9e997dc1c0dd8d61a252e61769fb078c3a159081061efda9c10ef9952abe  JarvisTerm-mac.zip

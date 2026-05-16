@@ -1,6 +1,6 @@
 cask "jarvis-term" do
   version "0.1.4"
-  sha256 :no_check # Since we are pointing to a dynamic ZIP for now, or update with actual hash
+  sha256 "7ffc9e997dc1c0dd8d61a252e61769fb078c3a159081061efda9c10ef9952abe"
 
   url "https://github.com/nave433-blip/jarvis-term/releases/download/v#{version}/JarvisTerm-mac.zip"
   name "Jarvis Term"
