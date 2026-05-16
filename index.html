@@ -241,11 +241,27 @@
     <script>
         let tabs = [];
         let activeTabId = null;
+window.addEventListener('pywebviewready', function() {
+    createTab();
 
-        window.addEventListener('pywebviewready', function() {
-            createTab();
-            
-            // Load current config
+    // Add drag and drop to input fields
+    ['dir-input', 'search-input', 'doc-path'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+            el.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.dataTransfer.files.length > 0) {
+                    el.value = e.dataTransfer.files[0].path;
+                }
+            });
+        }
+    });
+
+    // Load current config
+...
+
             pywebview.api.get_config().then(config => {
                 if(config.jarvis_model) {
                     document.getElementById('model-select').value = config.jarvis_model;
@@ -334,6 +350,28 @@
 
             term.onData(data => {
                 pywebview.api.write_to_pty(id, data);
+            });
+
+            // Drag and Drop support
+            container.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
+            container.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const filePath = files[0].path; // pywebview provides the path
+                    // If in JARVIS CLI env, run /analyze, else just paste path
+                    const env = document.getElementById('env-select').value;
+                    if (env.includes('jarvis')) {
+                        pywebview.api.write_to_pty(id, `/chat "Analyze this file: ${filePath}"\r`);
+                    } else {
+                        pywebview.api.write_to_pty(id, filePath);
+                    }
+                }
             });
 
             const env = document.getElementById('env-select').value;
