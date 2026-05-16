@@ -6,11 +6,18 @@
     <title>Jarvis Term</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
     <style>
+        :root {
+            --bg: #1E1E1E;
+            --top: #2D2D2D;
+            --accent: #007ACC;
+            --text: #FFFFFF;
+            --border: #3E3E3E;
+        }
         body {
             margin: 0;
             padding: 0;
-            background-color: #1E1E1E;
-            color: #FFFFFF;
+            background-color: var(--bg);
+            color: var(--text);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
@@ -18,14 +25,35 @@
             overflow: hidden;
         }
         #top-bar {
-            background-color: #2D2D2D;
-            padding: 10px 20px;
+            background-color: var(--top);
+            padding: 5px 15px;
             display: flex;
             align-items: center;
-            gap: 15px;
-            border-bottom: 1px solid #3E3E3E;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
             z-index: 10;
+        }
+        #tab-bar {
+            background-color: #252526;
+            display: flex;
+            gap: 2px;
+            padding: 0 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .tab {
+            padding: 8px 20px;
+            background-color: #2D2D2D;
+            font-size: 12px;
+            cursor: pointer;
+            border-right: 1px solid var(--border);
+            color: #999;
+            min-width: 100px;
+            text-align: center;
+        }
+        .tab.active {
+            background-color: var(--bg);
+            color: white;
+            border-bottom: 2px solid var(--accent);
         }
         .control-group {
             display: flex;
@@ -33,48 +61,71 @@
             gap: 8px;
         }
         label {
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #AAAAAA;
+            color: #888;
         }
         select, input {
             background-color: #1E1E1E;
             color: #FFF;
             border: 1px solid #444;
-            padding: 6px 10px;
+            padding: 4px 8px;
             border-radius: 4px;
-            font-size: 13px;
-            outline: none;
-        }
-        select:focus, input:focus {
-            border-color: #007ACC;
+            font-size: 12px;
         }
         #terminal-container {
             flex-grow: 1;
-            padding: 10px;
-            background-color: #1E1E1E;
+            background-color: var(--bg);
             overflow: hidden;
+            position: relative;
+        }
+        .terminal-instance {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            padding: 10px;
+            visibility: hidden;
+        }
+        .terminal-instance.active {
+            visibility: visible;
         }
         button {
-            background-color: #007ACC;
+            background-color: var(--accent);
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 4px 10px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 12px;
         }
-        button:hover {
-            background-color: #005A9E;
+        .settings-btn {
+            background: none;
+            font-size: 18px;
+            color: #AAA;
+            margin-left: auto;
         }
-        .logo {
-            font-weight: 800;
-            font-size: 16px;
-            color: #4EC9B0;
-            margin-right: auto;
-            letter-spacing: 1px;
+        .settings-btn:hover { color: white; }
+        .logo { font-weight: 800; font-size: 14px; color: #4EC9B0; }
+        
+        /* Modal Style */
+        #settings-modal {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2D2D2D;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            z-index: 100;
+            width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 99;
         }
     </style>
 </head>
@@ -82,69 +133,106 @@
     <div id="top-bar">
         <div class="logo">JARVIS TERM</div>
         <div class="control-group">
-            <label>Env:</label>
             <select id="env-select">
                 <option value="/bin/zsh">ZSH</option>
                 <option value="/bin/bash">BASH</option>
                 <option value="/usr/local/bin/jarvis">JARVIS CLI</option>
             </select>
         </div>
-        <div class="control-group">
-            <label>Dir:</label>
-            <input type="text" id="dir-input" value="/" style="width: 250px;">
-        </div>
-        <button id="start-btn">Launch</button>
+        <input type="text" id="dir-input" placeholder="Directory..." value="/" style="width: 200px;">
+        <button id="add-tab-btn">+ New Tab</button>
+        <button class="settings-btn" id="settings-btn">⚙</button>
     </div>
+    <div id="tab-bar"></div>
     <div id="terminal-container"></div>
+
+    <div class="overlay" id="overlay"></div>
+    <div id="settings-modal">
+        <h3>Jarvis Term Settings</h3>
+        <hr style="border: 0; border-top: 1px solid #444; margin-bottom: 15px;">
+        <p style="font-size: 12px; color: #AAA;">Configuring global Jarvis behavior...</p>
+        <button style="width: 100%; margin-top: 20px;" onclick="closeSettings()">Close</button>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
     <script>
-        let term;
-        let fitAddon;
+        let tabs = [];
+        let activeTabId = null;
 
         window.addEventListener('pywebviewready', function() {
-            term = new Terminal({
+            createTab();
+
+            document.getElementById('add-tab-btn').addEventListener('click', () => createTab());
+            document.getElementById('settings-btn').addEventListener('click', () => {
+                document.getElementById('settings-modal').style.display = 'block';
+                document.getElementById('overlay').style.display = 'block';
+            });
+        });
+
+        function createTab() {
+            const id = 'tab-' + Date.now();
+            const tabEl = document.createElement('div');
+            tabEl.className = 'tab';
+            tabEl.id = 'label-' + id;
+            tabEl.innerText = 'Workspace ' + (tabs.length + 1);
+            tabEl.onclick = () => switchTab(id);
+            document.getElementById('tab-bar').appendChild(tabEl);
+
+            const container = document.createElement('div');
+            container.className = 'terminal-instance';
+            container.id = id;
+            document.getElementById('terminal-container').appendChild(container);
+
+            const term = new Terminal({
                 theme: { background: '#1E1E1E' },
-                fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-                fontSize: 14,
+                fontFamily: 'Menlo, Monaco, monospace',
+                fontSize: 13,
                 cursorBlink: true
             });
-            fitAddon = new FitAddon.FitAddon();
+            const fitAddon = new FitAddon.FitAddon();
             term.loadAddon(fitAddon);
-            term.open(document.getElementById('terminal-container'));
+            term.open(container);
             fitAddon.fit();
 
             term.onData(data => {
-                pywebview.api.write_to_pty(data);
+                pywebview.api.write_to_pty(id, data);
             });
 
-            window.addEventListener('resize', () => {
-                fitAddon.fit();
-                pywebview.api.resize_pty(term.cols, term.rows);
-            });
-
-            document.getElementById('start-btn').addEventListener('click', () => {
-                const env = document.getElementById('env-select').value;
-                const dir = document.getElementById('dir-input').value;
-                term.clear();
-                pywebview.api.start_terminal(dir, env).then(() => {
-                    setTimeout(() => {
-                        fitAddon.fit();
-                        pywebview.api.resize_pty(term.cols, term.rows);
-                    }, 100);
-                });
-            });
+            const env = document.getElementById('env-select').value;
+            const dir = document.getElementById('dir-input').value;
             
-            // Auto start default env
+            pywebview.api.start_terminal(id, dir, env);
+
+            tabs.push({ id, term, fitAddon });
+            switchTab(id);
+        }
+
+        function switchTab(id) {
+            tabs.forEach(t => {
+                document.getElementById(t.id).classList.remove('active');
+                document.getElementById('label-' + t.id).classList.remove('active');
+            });
+            document.getElementById(id).classList.add('active');
+            document.getElementById('label-' + id).classList.add('active');
+            activeTabId = id;
+            
+            const activeTab = tabs.find(t => t.id === id);
             setTimeout(() => {
-                document.getElementById('start-btn').click();
-            }, 500);
-        });
+                activeTab.fitAddon.fit();
+                pywebview.api.resize_pty(id, activeTab.term.cols, activeTab.term.rows);
+            }, 10);
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
 
         // Called from Python
-        function writeToTerminal(data) {
-            if(term) term.write(data);
+        function writeToTerminal(id, data) {
+            const tab = tabs.find(t => t.id === id);
+            if(tab) tab.term.write(data);
         }
     </script>
 </body>
