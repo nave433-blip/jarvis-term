@@ -182,7 +182,12 @@
                 <option value="gpt-4o">GPT-4o</option>
             </select>
         </div>
-        <input type="text" id="dir-input" placeholder="Path..." value="/" style="width: 150px;">
+        <div class="control-group">
+            <label>Workspce:</label>
+            <input list="workspaces" id="dir-input" placeholder="Path..." value="/" style="width: 150px;">
+            <datalist id="workspaces"></datalist>
+            <button onclick="pinWorkspace()" class="icon-btn" title="Pin Workspace">📌</button>
+        </div>
         <button id="add-tab-btn">+ Tab</button>
         <button onclick="toggleSidePane()" id="toggle-pane-btn" class="icon-btn">📄</button>
         <button class="icon-btn" id="settings-btn" style="margin-left: auto;">⚙</button>
@@ -222,6 +227,9 @@
                 if(config.jarvis_model) {
                     document.getElementById('model-select').value = config.jarvis_model;
                 }
+                if(config.pinned_workspaces) {
+                    updateWorkspaceList(config.pinned_workspaces);
+                }
             });
 
             document.getElementById('add-tab-btn').addEventListener('click', () => createTab());
@@ -234,6 +242,23 @@
         function updateModel(val) {
             pywebview.api.save_config_field('jarvis_model', val).then(() => {
                 console.log("Model updated to " + val);
+            });
+        }
+
+        function pinWorkspace() {
+            const path = document.getElementById('dir-input').value;
+            pywebview.api.add_pinned_workspace(path).then(pinned => {
+                updateWorkspaceList(pinned);
+            });
+        }
+
+        function updateWorkspaceList(pinned) {
+            const dl = document.getElementById('workspaces');
+            dl.innerHTML = '';
+            pinned.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                dl.appendChild(opt);
             });
         }
 

@@ -79,6 +79,26 @@ class Api:
             json.dump(config, f, indent=4)
         return True
 
+    def add_pinned_workspace(self, path):
+        config = self.get_config()
+        pinned = config.get("pinned_workspaces", [])
+        if path not in pinned:
+            pinned.append(path)
+            config["pinned_workspaces"] = pinned
+            with open(self.config_path, "w") as f:
+                json.dump(config, f, indent=4)
+        return pinned
+
+    def remove_pinned_workspace(self, path):
+        config = self.get_config()
+        pinned = config.get("pinned_workspaces", [])
+        if path in pinned:
+            pinned.remove(path)
+            config["pinned_workspaces"] = pinned
+            with open(self.config_path, "w") as f:
+                json.dump(config, f, indent=4)
+        return pinned
+
     def read_file(self, file_path):
         try:
             if os.path.exists(file_path):
