@@ -12,11 +12,12 @@ def build():
         "--onedir",
         "--windowed",
         "--add-data", "index.html:.",
+        "--add-data", "assets/icon.png:assets",
         "--name", "JarvisTerm",
         "main.py"
     ]
     
-    subprocess.run(cmd)
+    subprocess.run(cmd, check=True)
     
     print("\nBuild complete!")
     if sys.platform == 'darwin':

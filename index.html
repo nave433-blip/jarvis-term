@@ -183,9 +183,10 @@
             z-index: 1000;
             width: 800px; height: 600px;
             box-shadow: 0 50px 100px rgba(0,0,0,0.8);
-            display: flex; flex-direction: column;
+            flex-direction: column;
             overflow: hidden;
         }
+        .modal.open { display: flex; }
         .modal-sidebar { width: 220px; background: rgba(0,0,0,0.3); border-right: 1px solid var(--glass-border); padding: 50px 0; }
         .nav-item { padding: 18px 40px; font-size: 16px; cursor: pointer; color: #555; transition: 0.3s; }
         .nav-item.active { color: var(--accent); border-right: 3px solid var(--accent); font-weight: 800; background: rgba(0,240,255,0.05); }
@@ -217,7 +218,7 @@
             <span>J</span>ARVIS
         </div>
         <div class="control-group">
-            <input list="workspaces" id="dir-input" placeholder="Jump to directory..." value="/" style="width: 350px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);">
+            <input list="workspaces" id="dir-input" placeholder="Jump to directory..." value="" style="width: 350px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);">
             <datalist id="workspaces"></datalist>
             <button onclick="pinWorkspace()" class="icon-btn" title="Pin Workspace">📌</button>
         </div>
@@ -275,7 +276,22 @@
                         <select id="config-provider" style="width: 100%; padding: 15px; background: rgba(0,0,0,0.4); border: 1px solid #333;">
                             <option value="ollama">Ollama (Offline/Sovereign)</option>
                             <option value="gemini">Google Gemini Pro</option>
-                            <option value="openai">OpenAI GPT-4o</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic Claude</option>
+                            <option value="mistral">Mistral</option>
+                            <option value="deepseek">DeepSeek</option>
+                            <option value="kimi">Kimi / Moonshot</option>
+                            <option value="qwen">Qwen</option>
+                            <option value="nvidia">NVIDIA / Nemotron</option>
+                            <option value="perplexity">Perplexity</option>
+                            <option value="groq">Groq</option>
+                            <option value="stability">Stability AI</option>
+                            <option value="cohere">Cohere</option>
+                            <option value="replicate">Replicate</option>
+                            <option value="together">Together AI</option>
+                            <option value="openrouter">OpenRouter</option>
+                            <option value="granite">IBM Granite</option>
+                            <option value="replit">Replit Agent</option>
                         </select>
                     </div>
                     <div>
@@ -286,7 +302,7 @@
 
                 <div id="section-updates" class="section" style="display:none;">
                     <h1 style="margin-top: 0; font-weight: 900; font-size: 32px; color: #FFD700;">Core Build</h1>
-                    <p style="color: #666;">Version 0.1.5 | Engineering Console</p>
+                    <p style="color: #666;" id="core-version">Version loading... | Engineering Console</p>
                     <button onclick="checkUpdatesNow()" style="width: 100%; padding: 20px; margin-top: 40px; background: var(--accent); color: black;">SCAN FOR UPGRADES</button>
                     <div id="update-status" style="margin-top: 30px; font-weight: 700; color: var(--accent);"></div>
                 </div>
@@ -329,7 +345,7 @@
             setInterval(() => {
                 const infoBox = document.getElementById(`workspace-info-${id}`);
                 if(infoBox) {
-                    pywebview.api.get_cwd().then(cwd => {
+                    pywebview.api.get_cwd(id).then(cwd => {
                         infoBox.innerText = `📁 WORKSPACE: ${cwd}`;
                     });
                 }
@@ -374,9 +390,11 @@
 
             pywebview.api.get_config().then(config => {
                 const shell = config.shell || '/bin/zsh';
-                const dir = document.getElementById('dir-input').value;
+                const dir = document.getElementById('dir-input').value || '~';
                 pywebview.api.start_terminal(id, dir, shell).then(() => {
-                    setTimeout(() => pywebview.api.write_to_pty(id, 'jarvis\r'), 1000);
+                    pywebview.api.get_jarvis_launch_command().then(cmd => {
+                        setTimeout(() => pywebview.api.write_to_pty(id, cmd + '\r'), 600);
+                    });
                 });
             });
 
@@ -423,13 +441,22 @@
         }
 
         function openSettings() {
-            document.getElementById('settings-modal').style.display = 'block';
+            document.getElementById('settings-modal').classList.add('open');
             document.getElementById('overlay').style.display = 'block';
+            pywebview.api.get_config().then(config => {
+                document.getElementById('config-shell').value = config.shell || '/bin/zsh';
+                document.getElementById('config-provider').value = config.provider || 'ollama';
+                document.getElementById('config-model').value = config.jarvis_model || '';
+            });
         }
 
         function closeSettings() {
-            document.getElementById('settings-modal').style.display = 'none';
+            document.getElementById('settings-modal').classList.remove('open');
             document.getElementById('overlay').style.display = 'none';
+        }
+
+        function closeAllModals() {
+            closeSettings();
         }
 
         function showSection(name, el) {
@@ -525,6 +552,13 @@
         }
 
         window.addEventListener('pywebviewready', () => {
+            pywebview.api.get_home().then(home => {
+                document.getElementById('dir-input').value = home;
+            });
+            pywebview.api.get_jarvis_info().then(info => {
+                document.getElementById('global-status').innerText = `JARVIS ${info.version} • ${info.provider.toUpperCase()}`;
+                document.getElementById('core-version').innerText = `Version ${info.version} | Engineering Console`;
+            });
             createTab();
         });
     </script>

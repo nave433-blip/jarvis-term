@@ -3,6 +3,8 @@
 import sys
 import traceback
 import os
+import shlex
+import shutil
 from pathlib import Path
 
 # Install a crash handler immediately so import-time errors are captured.
@@ -51,15 +53,80 @@ import threading
 import json
 import webbrowser
 import traceback
+try:
+    import tomllib
+except ModuleNotFoundError:
+    tomllib = None
 
 class Api:
     def __init__(self):
         self.ptys = {} # tab_id -> fd
+        self.pty_cwds = {}
         self.window = None
         self.config_path = Path.home() / ".jarvis" / "config.json"
+        self.jarvis_roots = [
+            Path.home() / ".jarvis-app",
+            Path.home() / "jarvis-dev",
+        ]
 
     def set_window(self, window):
         self.window = window
+
+    def _resolve_jarvis_bin(self):
+        config = self.get_config()
+        configured = config.get("jarvis_bin")
+        candidates = []
+        if configured:
+            candidates.append(Path(configured).expanduser())
+
+        path_bin = shutil.which("jarvis")
+        if path_bin:
+            candidates.append(Path(path_bin))
+
+        candidates.extend([
+            Path.home() / ".jarvis-app" / "venv" / "bin" / "jarvis",
+            Path.home() / ".jarvis-app" / "jarvis",
+            Path.home() / "jarvis-dev" / "jarvis",
+            Path.home() / "jarvis-dev" / "venv" / "bin" / "jarvis",
+        ])
+
+        for candidate in candidates:
+            try:
+                if candidate.exists() and os.access(candidate, os.X_OK):
+                    return str(candidate)
+            except OSError:
+                continue
+        return path_bin or "jarvis"
+
+    def _current_jarvis_version(self):
+        for root in self.jarvis_roots:
+            pyproject = root / "pyproject.toml"
+            if pyproject.exists() and tomllib:
+                try:
+                    with open(pyproject, "rb") as f:
+                        return tomllib.load(f).get("project", {}).get("version")
+                except Exception:
+                    pass
+        return None
+
+    def _build_child_env(self):
+        env = os.environ.copy()
+        path_parts = [
+            str(Path.home() / ".jarvis-app" / "venv" / "bin"),
+            str(Path.home() / "jarvis-dev"),
+            str(Path.home() / "jarvis-dev" / "venv" / "bin"),
+            "/usr/local/bin",
+            "/opt/homebrew/bin",
+        ]
+        env["PATH"] = os.pathsep.join(path_parts + [env.get("PATH", "")])
+        return env
+
+    def _add_jarvis_import_paths(self):
+        for root in reversed(self.jarvis_roots):
+            if root.exists():
+                root_str = str(root)
+                if root_str not in sys.path:
+                    sys.path.insert(0, root_str)
 
     def start_terminal(self, tab_id, cwd, shell):
         if tab_id in self.ptys:
@@ -67,6 +134,14 @@ class Api:
                 os.close(self.ptys[tab_id])
             except Exception:
                 pass
+
+        cwd = os.path.expanduser(cwd or str(Path.home()))
+        if not os.path.isdir(cwd):
+            cwd = str(Path.home())
+        shell = os.path.expanduser(shell or os.environ.get("SHELL") or "/bin/zsh")
+        if not os.path.exists(shell):
+            shell = os.environ.get("SHELL") or "/bin/zsh"
+        self.pty_cwds[tab_id] = cwd
 
         pid, fd = pty.fork()
         if pid == 0:  # Child
@@ -76,6 +151,7 @@ class Api:
                 os.chdir(os.path.expanduser("~"))
             os.environ['TERM'] = 'xterm-256color'
             os.environ['COLORTERM'] = 'truecolor'
+            os.environ.update(self._build_child_env())
             # Launch shell
             try:
                 os.execv(shell, [shell])
@@ -104,6 +180,7 @@ class Api:
                     break
         if tab_id in self.ptys:
             del self.ptys[tab_id]
+        self.pty_cwds.pop(tab_id, None)
 
     def write_to_pty(self, tab_id, data):
         fd = self.ptys.get(tab_id)
@@ -138,16 +215,17 @@ class Api:
 
     def check_updates(self):
         try:
-            sys.path.append(str(Path.home() / "jarvis-dev"))
+            self._add_jarvis_import_paths()
             from core.update import check_for_updates, CURRENT_VERSION
             latest = check_for_updates()
-            return {"current": CURRENT_VERSION, "latest": latest or CURRENT_VERSION}
+            return {"current": self._current_jarvis_version() or CURRENT_VERSION, "latest": latest or CURRENT_VERSION}
         except Exception:
-            return {"current": "0.1.2", "latest": "0.1.2"}
+            version = self._current_jarvis_version() or "unknown"
+            return {"current": version, "latest": version}
 
     def run_update(self):
         try:
-            sys.path.append(str(Path.home() / "jarvis-dev"))
+            self._add_jarvis_import_paths()
             from core.update import apply_update
             return apply_update()
         except Exception:
@@ -175,8 +253,32 @@ class Api:
         webbrowser.open(url)
         return True
 
-    def get_cwd(self):
-        return os.getcwd()
+    def get_cwd(self, tab_id=None):
+        if tab_id and tab_id in self.pty_cwds:
+            return self.pty_cwds[tab_id]
+        return str(Path.home())
+
+    def get_home(self):
+        return str(Path.home())
+
+    def get_jarvis_launch_command(self):
+        config = self.get_config()
+        configured = config.get("jarvis_launch_command")
+        if configured:
+            return configured
+        return f"{shlex.quote(self._resolve_jarvis_bin())} interactive"
+
+    def get_jarvis_info(self):
+        config = self.get_config()
+        jarvis_bin = self._resolve_jarvis_bin()
+        return {
+            "bin": jarvis_bin,
+            "launch_command": self.get_jarvis_launch_command(),
+            "version": self._current_jarvis_version() or "unknown",
+            "provider": config.get("provider", "ollama"),
+            "model": config.get("jarvis_model", ""),
+            "roots": [str(p) for p in self.jarvis_roots if p.exists()],
+        }
 
     # Menu Callbacks
     def menu_new_session(self):

@@ -1,8 +1,11 @@
-# 🚀 Jarvis Term: The Ultimate AI Engineering Console (v0.1.7)
+# 🚀 Jarvis Term: The Ultimate AI Engineering Console (v0.2.4)
 
 Jarvis Term is a high-performance, standalone terminal emulator built for the modern engineer. Inspired by **Warp** and powered by the **JARVIS AI Assistant**, it features a modern Glassmorphism UI and deep agentic intelligence.
 
-## 💎 What's New in v0.1.7
+## 💎 What's New in v0.2.4
+- **Jarvis Core Sync:** New sessions launch the current `jarvis interactive` runtime instead of stale help output.
+- **Live Core Status:** The UI reports the active Jarvis version, provider, and model configuration from `~/.jarvis`.
+- **Provider Parity:** Settings now expose the expanded Jarvis provider list.
 - **Sovereign Reinstall:** Integrated "Clean Refresh" capability from the System settings.
 - **Auto-Repair Suite:** Proactive detection and launching of local LLM servers (Ollama.app).
 - **Pro Dashboard:** High-fidelity `/menu` system for instant access to every tool.
